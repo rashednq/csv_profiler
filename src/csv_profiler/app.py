@@ -6,35 +6,71 @@ from render import generate_json_report, generate_markdown_report
 
 st.set_page_config(page_title="CSV Profiler", layout="wide")
 st.title("CSV Profiler")
+st.caption("Upload CSV → Generate → Download")
 
 uploaded = st.file_uploader("Upload CSV", type=["csv"])
 
-if uploaded:
-    csv_text = uploaded.getvalue().decode("utf-8")
-    rows = read_csv_text(csv_text)
+if not uploaded:
+    st.info("Upload a CSV file to begin.")
+    st.stop()
 
-    if st.button("Generate Report"):
-        report = build_report(rows)
-        profile = to_profile(report)
-        st.session_state["profile"] = profile
+# قراءة الملف المرفوع كنص
+csv_text = uploaded.getvalue().decode("utf-8")
+rows = read_csv_text(csv_text)
+
+if not rows:
+    st.error("CSV is empty or could not be parsed.")
+    st.stop()
+
+# زر توليد التقرير
+if st.button("Generate Report"):
+    report = build_report(rows)
+    profile = to_profile(report)
+    st.session_state["report"] = report
+    st.session_state["profile"] = profile
 
 profile = st.session_state.get("profile")
+report = st.session_state.get("report")
 
-if profile:
-    st.subheader("Summary")
-    st.write(f"Rows: {profile['n_rows']}")
-    st.write(f"Columns: {profile['n_cols']}")
+if not profile:
+    st.warning("Click **Generate Report** to see results.")
+    st.stop()
 
+# عرض الملخص
+st.subheader("Summary")
+c1, c2 = st.columns(2)
+c1.metric("Rows", f"{profile['n_rows']:,}")
+c2.metric("Columns", f"{profile['n_cols']}")
+
+# عرض جدول الأعمدة
+st.subheader("Column Details")
+st.dataframe(profile["columns"], use_container_width=True)
+
+# تجهيز ملفات التحميل
+json_data = generate_json_report(profile)
+md_data = generate_markdown_report(profile)
+
+st.subheader("Download")
+d1, d2 = st.columns(2)
+
+with d1:
     st.download_button(
         "Download JSON",
-        data=generate_json_report(profile),
+        data=json_data,
         file_name="report.json",
         mime="application/json",
     )
 
+with d2:
     st.download_button(
         "Download Markdown",
-        data=generate_markdown_report(profile),
+        data=md_data,
         file_name="report.md",
         mime="text/markdown",
     )
+
+with st.expander("Preview Markdown"):
+    st.markdown(md_data)
+
+with st.expander("Preview JSON"):
+    st.json(report)

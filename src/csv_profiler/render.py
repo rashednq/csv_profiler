@@ -23,18 +23,25 @@ def display_profile_summary(profile):
 
 def display_column_table(profile):
     print("COLUMN DETAILS")
-    print("-" * 60)
-    print(f"{'Column':<15} {'Type':<10} {'Missing':<15} {'Unique':<10}")
-    print("-" * 60)
+    print("-" * 72)
+    print(f"{'Column':<18} {'Type':<10} {'Missing':<10} {'Missing%':<10} {'Unique':<10}")
+    print("-" * 72)
 
-    for col in profile["columns"]:
-        n_rows = profile["n_rows"]
-        missing_pct = (col["missing"] / n_rows * 100) if n_rows else 0
+    n_rows = profile["n_rows"] or 0
+    cols = list(profile["columns"])
+    cols.sort(key=lambda c: c.get("missing", 0), reverse=True)
+
+    for col in cols:
+        missing = col.get("missing", 0)
+        unique = col.get("unique", 0)
+        missing_pct = (missing / n_rows * 100) if n_rows else 0
+
         print(
-            f"{col['name']:<15} "
-            f"{col['type']:<10} "
-            f"{col['missing']} ({missing_pct:.1f}%)     "
-            f"{col['unique']}"
+            f"{col.get('name',''):<18} "
+            f"{col.get('type',''):<10} "
+            f"{missing:<10} "
+            f"{missing_pct:>7.1f}%   "
+            f"{unique:<10}"
         )
 
 
@@ -44,19 +51,28 @@ def generate_json_report(profile):
 
 def generate_markdown_report(profile):
     lines = []
-    lines.append("# CSV Profiling Report\n")
+    lines.append("# CSV Profiling Report")
+    lines.append("")
     lines.append(f"- **Rows:** {profile['n_rows']:,}")
-    lines.append(f"- **Columns:** {profile['n_cols']}\n")
-    lines.append("## Column Summary\n")
-    lines.append("| Column | Type | Missing | Unique |")
-    lines.append("|--------|------|--------:|-------:|")
+    lines.append(f"- **Columns:** {profile['n_cols']}")
+    lines.append("")
 
-    for col in profile["columns"]:
-        n_rows = profile["n_rows"]
-        missing_pct = (col["missing"] / n_rows * 100) if n_rows else 0
+    cols = list(profile["columns"])
+    n_rows = profile["n_rows"]
+
+    for c in cols:
+        c["missing_pct"] = (c["missing"] / n_rows * 100) if n_rows else 0.0
+
+    cols.sort(key=lambda c: (-c["missing_pct"], c["name"]))
+
+    lines.append("## Column Details")
+    lines.append("")
+    lines.append("| Column | Type | Missing | Missing % | Unique |")
+    lines.append("|:------|:-----|--------:|----------:|-------:|")
+
+    for c in cols:
         lines.append(
-            f"| {col['name']} | {col['type']} | "
-            f"{col['missing']} ({missing_pct:.1f}%) | {col['unique']} |"
+            f"| {c['name']} | {c['type']} | {c['missing']:,} | {c['missing_pct']:.1f}% | {c['unique']:,} |"
         )
 
     return "\n".join(lines)

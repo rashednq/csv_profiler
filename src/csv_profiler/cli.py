@@ -1,36 +1,42 @@
-import os
+from pathlib import Path
 import typer
 
-from csv_io import read_csv
-from profiling import build_report, to_profile
-from render import print_report, save_report, save_report_md
+from csv_profiler.csv_io import read_csv
+from csv_profiler.profiling import build_report, to_profile
+from csv_profiler.render import generate_json_report, generate_markdown_report
 
-app = typer.Typer()
+app = typer.Typer(help="CSV Profiler CLI")
 
 
 @app.command()
-def run(
-    csv_path: str = typer.Argument(..., help="Path to CSV file"),
-    out_dir: str = typer.Option("outputs", "--out"),
+def profile(
+    csv_path: Path = typer.Argument(..., exists=True, readable=True),
+    out_dir: Path = typer.Option(Path("outputs"), "--out-dir", "-o"),
 ):
-    if not os.path.isfile(csv_path):
-        raise typer.BadParameter("CSV file not found")
+    rows = read_csv(csv_path)
+    report = build_report(rows)
+    profile_data = to_profile(report)
 
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "report.json").write_text(generate_json_report(profile_data), encoding="utf-8")
+    (out_dir / "report.md").write_text(generate_markdown_report(profile_data), encoding="utf-8")
+
+    typer.echo(f"Saved: {out_dir / 'report.json'}")
+    typer.echo(f"Saved: {out_dir / 'report.md'}")
+
+
+@app.command()
+def info(
+    csv_path: Path = typer.Argument(..., exists=True, readable=True),
+):
     rows = read_csv(csv_path)
     if not rows:
-        raise typer.BadParameter("Empty CSV")
+        typer.echo("Empty CSV")
+        raise typer.Exit()
 
-    report = build_report(rows)
-    profile = to_profile(report)
-
-    os.makedirs(out_dir, exist_ok=True)
-
-    json_path = os.path.join(out_dir, "report.json")
-    md_path = os.path.join(out_dir, "report.md")
-
-    print_report(report)
-    save_report(report, json_path)
-    save_report_md(profile, md_path)
+    cols = list(rows[0].keys())
+    typer.echo(f"Rows: {len(rows)}")
+    typer.echo(f"Columns: {len(cols)}")
 
 
 if __name__ == "__main__":

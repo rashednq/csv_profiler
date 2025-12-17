@@ -1,0 +1,45 @@
+{
+    "rows": 20,
+    "columns": {
+        "order_id": {
+            "missing": 0,
+            "type": "number"
+        },
+        "customer_name": {
+            "missing": 3,
+            "type": "string"
+        },
+        "city": {
+            "missing": 4,
+            "type": "string"
+        },
+        "item_name": {
+            "missing": 2,
+            "type": "string"
+        },
+        "quantity": {
+            "missing": 0,
+            "type": "number"
+        },
+        "unit_price_sar": {
+            "missing": 5,
+            "type": "number"
+        },
+        "total_amount_sar": {
+            "missing": 3,
+            "type": "number"
+        },
+        "payment_method": {
+            "missing": 3,
+            "type": "string"
+        },
+        "order_status": {
+            "missing": 1,
+            "type": "string"
+        },
+        "order_date": {
+            "missing": 4,
+            "type": "string"
+        }
+    }
+}

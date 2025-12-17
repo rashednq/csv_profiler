@@ -1,8 +1,8 @@
 import streamlit as st
 
-from csv_io import read_csv_text
-from profiling import build_report, to_profile
-from render import generate_json_report, generate_markdown_report
+from csv_profiler.csv_io import read_csv_text
+from csv_profiler.profiling import build_report, to_profile
+from csv_profiler.render import generate_json_report, generate_markdown_report
 
 st.set_page_config(page_title="CSV Profiler", layout="wide")
 st.title("CSV Profiler")
@@ -14,7 +14,6 @@ if not uploaded:
     st.info("Upload a CSV file to begin.")
     st.stop()
 
-# قراءة الملف المرفوع كنص
 csv_text = uploaded.getvalue().decode("utf-8")
 rows = read_csv_text(csv_text)
 
@@ -22,7 +21,6 @@ if not rows:
     st.error("CSV is empty or could not be parsed.")
     st.stop()
 
-# زر توليد التقرير
 if st.button("Generate Report"):
     report = build_report(rows)
     profile = to_profile(report)
@@ -36,17 +34,15 @@ if not profile:
     st.warning("Click **Generate Report** to see results.")
     st.stop()
 
-# عرض الملخص
 st.subheader("Summary")
 c1, c2 = st.columns(2)
 c1.metric("Rows", f"{profile['n_rows']:,}")
-c2.metric("Columns", f"{profile['n_cols']}")
+c2.metric("Columns", f"{profile['n_cols']:,}")
 
-# عرض جدول الأعمدة
 st.subheader("Column Details")
-st.dataframe(profile["columns"], use_container_width=True)
+cols_sorted = sorted(profile["columns"], key=lambda x: x["missing"], reverse=True)
+st.dataframe(cols_sorted, use_container_width=True)
 
-# تجهيز ملفات التحميل
 json_data = generate_json_report(profile)
 md_data = generate_markdown_report(profile)
 
@@ -59,6 +55,7 @@ with d1:
         data=json_data,
         file_name="report.json",
         mime="application/json",
+        use_container_width=True,
     )
 
 with d2:
@@ -67,10 +64,11 @@ with d2:
         data=md_data,
         file_name="report.md",
         mime="text/markdown",
+        use_container_width=True,
     )
 
 with st.expander("Preview Markdown"):
     st.markdown(md_data)
 
 with st.expander("Preview JSON"):
-    st.json(report)
+    st.json(profile)

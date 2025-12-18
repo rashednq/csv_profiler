@@ -1,13 +1,9 @@
-"""
-Command-line interface for CSV Profiler.
-"""
-
 from pathlib import Path
 import subprocess
 import typer
 
 from csv_profiler.csv_io import read_csv_file
-from csv_profiler.profiler import build_report, to_profile
+from csv_profiler.profiling import build_report, to_profile
 from csv_profiler.render import (
     generate_json_report,
     generate_markdown_report,

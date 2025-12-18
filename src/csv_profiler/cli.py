@@ -1,41 +1,23 @@
 from pathlib import Path
 import subprocess
+
 import typer
 
 from csv_profiler.csv_io import read_csv_file
 from csv_profiler.profiling import build_report, to_profile
-from csv_profiler.render import (
-    generate_json_report,
-    generate_markdown_report,
-)
+from csv_profiler.render import generate_json_report, generate_markdown_report
 
 app = typer.Typer(help="CSV Profiler - Analyze and profile CSV files")
 
 
 @app.command()
 def profile(
-    csv_path: Path = typer.Argument(
-        ...,
-        exists=True,
-        readable=True,
-        help="Path to CSV file",
-    ),
-    out_dir: Path = typer.Option(
-        Path("outputs"),
-        "--out-dir",
-        "-o",
-        help="Output directory",
-    ),
-    format: str = typer.Option(
-        "both",
-        "--format",
-        "-f",
-        help="json | md | both",
-    ),
+    csv_path: Path = typer.Argument(..., exists=True, readable=True, help="Path to CSV file"),
+    out_dir: Path = typer.Option(Path("outputs"), "--out-dir", "-o", help="Output directory"),
+    format: str = typer.Option("both", "--format", "-f", help="json | md | both"),
 ):
     """Profile a CSV file and generate reports."""
     rows = read_csv_file(csv_path)
-
     report = build_report(rows)
     profile_data = to_profile(report)
 
@@ -46,35 +28,25 @@ def profile(
         raise typer.BadParameter("format must be: json, md, or both")
 
     if fmt in ("json", "both"):
-        json_path = out_dir / "report.json"
-        json_path.write_text(
+        (out_dir / "report.json").write_text(
             generate_json_report(profile_data),
             encoding="utf-8",
         )
-        typer.echo(f"Saved: {json_path}")
+        typer.echo(f"Saved: {out_dir / 'report.json'}")
 
     if fmt in ("md", "both"):
-        md_path = out_dir / "report.md"
-        md_path.write_text(
+        (out_dir / "report.md").write_text(
             generate_markdown_report(profile_data),
             encoding="utf-8",
         )
-        typer.echo(f"Saved: {md_path}")
+        typer.echo(f"Saved: {out_dir / 'report.md'}")
 
-    typer.echo(
-        f"\nProfiled {profile_data['n_rows']} rows, "
-        f"{profile_data['n_cols']} columns"
-    )
+    typer.echo(f"\nProfiled {profile_data['n_rows']} rows, {profile_data['n_cols']} columns")
 
 
 @app.command()
 def info(
-    csv_path: Path = typer.Argument(
-        ...,
-        exists=True,
-        readable=True,
-        help="Path to CSV file",
-    ),
+    csv_path: Path = typer.Argument(..., exists=True, readable=True, help="Path to CSV file"),
 ):
     """Show basic information about a CSV file."""
     rows = read_csv_file(csv_path)
@@ -97,13 +69,7 @@ def web(
     app_path = Path(__file__).parent / "app.py"
     typer.echo("Starting Streamlit app...")
     subprocess.run(
-        [
-            "streamlit",
-            "run",
-            str(app_path),
-            "--server.port",
-            str(port),
-        ],
+        ["python", "-m", "streamlit", "run", str(app_path), "--server.port", str(port)],
         check=True,
     )
 

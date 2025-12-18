@@ -30,3 +30,10 @@ def read_csv_text(csv_text):
     reader = csv.DictReader(csvfile)
     rows = list(reader)
     return rows
+
+
+from pathlib import Path
+from typing import Union
+
+def read_csv_file(path: Union[str, Path]):
+    return read_csv(str(path))
